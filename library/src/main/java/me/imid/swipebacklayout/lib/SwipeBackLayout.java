@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -325,8 +324,8 @@ public class SwipeBackLayout extends FrameLayout {
     /**
      * Set a drawable used for edge shadow.
      *
-     * @param shadow    Drawable to use
-     * @param edgeFlags Combination of edge flags describing the edge to set
+     * @param shadow   Drawable to use
+     * @param edgeFlag Combination of edge flags describing the edge to set
      * @see #EDGE_LEFT
      * @see #EDGE_RIGHT
      * @see #EDGE_BOTTOM
@@ -348,8 +347,8 @@ public class SwipeBackLayout extends FrameLayout {
     /**
      * Set a drawable used for edge shadow.
      *
-     * @param resId     Resource of drawable to use
-     * @param edgeFlags Combination of edge flags describing the edge to set
+     * @param resId    Resource of drawable to use
+     * @param edgeFlag Combination of edge flags describing the edge to set
      * @see #EDGE_LEFT
      * @see #EDGE_RIGHT
      * @see #EDGE_BOTTOM
@@ -377,7 +376,7 @@ public class SwipeBackLayout extends FrameLayout {
             top = -childHeight - mShadowBottom.getIntrinsicHeight() - OVERSCROLL_DISTANCE;
             mTrackingEdge = EDGE_BOTTOM;
         } else if ((mEdgeFlag & EDGE_TOP) != 0) {
-            top = childWidth + mShadowLeft.getIntrinsicWidth() + OVERSCROLL_DISTANCE;
+            top = childHeight + mShadowTop.getIntrinsicHeight() + OVERSCROLL_DISTANCE;
             mTrackingEdge = EDGE_TOP;
         }
 
@@ -450,7 +449,7 @@ public class SwipeBackLayout extends FrameLayout {
         } else if ((mTrackingEdge & EDGE_BOTTOM) != 0) {
             canvas.clipRect(child.getLeft(), child.getBottom(), getRight(), getHeight());
         } else if ((mTrackingEdge & EDGE_TOP) != 0) {
-            canvas.clipRect(child.getLeft(), 0, getRight(), child.getTop() + getStatusBarHeight());
+            canvas.clipRect(child.getLeft(), 0, getRight(), child.getTop());
         }
         canvas.drawColor(color);
     }
@@ -481,20 +480,11 @@ public class SwipeBackLayout extends FrameLayout {
         }
 
         if ((mEdgeFlag & EDGE_TOP) != 0) {
-            mShadowTop.setBounds(childRect.left, childRect.top - mShadowTop.getIntrinsicHeight(), childRect.right,
-                    childRect.top + getStatusBarHeight());
+            mShadowTop.setBounds(childRect.left, childRect.top - mShadowTop.getIntrinsicHeight(),
+                    childRect.right, childRect.top);
             mShadowTop.setAlpha((int) (mScrimOpacity * FULL_ALPHA));
             mShadowTop.draw(canvas);
         }
-    }
-
-    private int getStatusBarHeight() {
-        int result = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
     }
 
     public void attachToActivity(Activity activity) {
@@ -535,7 +525,7 @@ public class SwipeBackLayout extends FrameLayout {
                     mTrackingEdge = EDGE_RIGHT;
                 } else if (mDragHelper.isEdgeDragInProgress(EDGE_BOTTOM, i)) {
                     mTrackingEdge = EDGE_BOTTOM;
-                } else if (mDragHelper.isEdgeTouched(EDGE_TOP, i)) {
+                } else if (mDragHelper.isEdgeDragInProgress(EDGE_TOP, i)) {
                     mTrackingEdge = EDGE_TOP;
                 }
                 if (mListeners != null && !mListeners.isEmpty()) {
@@ -548,9 +538,8 @@ public class SwipeBackLayout extends FrameLayout {
             boolean directionCheck = false;
             if (mEdgeFlag == EDGE_LEFT || mEdgeFlag == EDGE_RIGHT) {
                 directionCheck = !mDragHelper.checkTouchSlop(ViewDragHelper.DIRECTION_VERTICAL, i);
-            } else if (mEdgeFlag == EDGE_BOTTOM) {
-                directionCheck = !mDragHelper
-                        .checkTouchSlop(ViewDragHelper.DIRECTION_HORIZONTAL, i);
+            } else if (mEdgeFlag == EDGE_BOTTOM || mEdgeFlag == EDGE_TOP) {
+                directionCheck = !mDragHelper.checkTouchSlop(ViewDragHelper.DIRECTION_HORIZONTAL, i);
             } else if (mEdgeFlag == EDGE_ALL) {
                 directionCheck = true;
             }
@@ -623,7 +612,7 @@ public class SwipeBackLayout extends FrameLayout {
                         + mShadowBottom.getIntrinsicHeight() + OVERSCROLL_DISTANCE) : 0;
             } else if ((mTrackingEdge & EDGE_TOP) != 0) {
                 top = yvel > 0 || yvel == 0 && mScrollPercent > mScrollThreshold ? childHeight
-                        + mShadowBottom.getIntrinsicHeight() + OVERSCROLL_DISTANCE : 0;
+                        + mShadowTop.getIntrinsicHeight() + OVERSCROLL_DISTANCE : 0;
             }
 
             mDragHelper.settleCapturedViewAt(left, top);
