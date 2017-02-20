@@ -17,6 +17,7 @@
 package me.imid.swipebacklayout.lib;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v4.view.ViewCompat;
@@ -153,6 +154,10 @@ public class ViewDragHelper {
     private final ViewGroup mParentView;
 
     private boolean mFullScreenSwipe = false;
+
+    private int mStatusBarHeight;
+
+    private int mNavigationBarHeight;
 
     /**
      * A Callback is used as a communication channel with the ViewDragHelper
@@ -429,6 +434,27 @@ public class ViewDragHelper {
         mMaxVelocity = vc.getScaledMaximumFlingVelocity();
         mMinVelocity = vc.getScaledMinimumFlingVelocity();
         mScroller = ScrollerCompat.create(context, sInterpolator);
+
+        mStatusBarHeight = getStatusBarHeight(context);
+        mNavigationBarHeight = getNavigationBarHeight(context);
+    }
+
+    private int getStatusBarHeight(Context context) {
+        Resources resources = context.getResources();
+        int resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            return resources.getDimensionPixelSize(resourceId);
+        }
+        return 0;
+    }
+
+    private int getNavigationBarHeight(Context context) {
+        Resources resources = context.getResources();
+        int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            return resources.getDimensionPixelSize(resourceId);
+        }
+        return 0;
     }
 
     /**
@@ -1367,16 +1393,12 @@ public class ViewDragHelper {
         }
         switch (edge) {
             case EDGE_LEFT:
+            case EDGE_TOP:
                 if (delta <= 0f || absDelta <= mTouchSlop) return false;
                 break;
-            case EDGE_TOP:
-                if (odelta <= 0f || absODelta <= mTouchSlop) return false;
-                break;
             case EDGE_RIGHT:
-                if (delta >= 0f || absDelta <= mTouchSlop) return false;
-                break;
             case EDGE_BOTTOM:
-                if (odelta >= 0f || absODelta <= mTouchSlop) return false;
+                if (delta >= 0f || absDelta <= mTouchSlop) return false;
                 break;
         }
         return (mEdgeDragsInProgress[pointerId] & edge) == 0;
@@ -1604,11 +1626,11 @@ public class ViewDragHelper {
         } else {
             if (x < mParentView.getLeft() + mEdgeSize)
                 result = EDGE_LEFT;
-            if (y < mParentView.getTop() + mEdgeSize)
+            if (y < mParentView.getTop() + mEdgeSize + mStatusBarHeight)
                 result = EDGE_TOP;
             if (x > mParentView.getRight() - mEdgeSize)
                 result = EDGE_RIGHT;
-            if (y > mParentView.getBottom() - mEdgeSize)
+            if (y > mParentView.getBottom() - mEdgeSize - mNavigationBarHeight)
                 result = EDGE_BOTTOM;
         }
 
